@@ -9,9 +9,12 @@ namespace CRUD_MVC.Controllers
     public class EmployeeController : Controller
     {
         private readonly CrudDbContext _DBContext;
-        public EmployeeController(CrudDbContext crudDbContext)
+        private readonly ILogger<Employee> _logger;
+
+        public EmployeeController(CrudDbContext crudDbContext, ILogger<Employee> logger)
         {
             this._DBContext = crudDbContext;
+            this._logger = logger;
         }
 
         [HttpGet]
@@ -24,23 +27,34 @@ namespace CRUD_MVC.Controllers
         [HttpGet]
         public IActionResult Add()
         {
+            _logger.LogInformation("You are request index page");
             return View();
         }
         [HttpPost]
         public async Task<IActionResult> Add(EmployeeViewModel employeeViewModel)
         {
-            var employee = new Employee()
+            try
             {
-                Id = Guid.NewGuid(),
-                Name = employeeViewModel.Name,
-                Email = employeeViewModel.Email,
-                Salary = employeeViewModel.Salary,
-                Department = employeeViewModel.Department,
-                DateOfBirth = employeeViewModel.DateOfBirth
-            };
-            await _DBContext.Employees.AddAsync(employee);
-            await _DBContext.SaveChangesAsync();
-            return RedirectToAction("Index");
+                var employee = new Employee()
+                {
+                    Id = Guid.NewGuid(),
+                    Name = employeeViewModel.Name,
+                    Email = employeeViewModel.Email,
+                    Salary = employeeViewModel.Salary,
+                    Department = employeeViewModel.Department,
+                    DateOfBirth = employeeViewModel.DateOfBirth
+                };
+                await _DBContext.Employees.AddAsync(employee);
+                await _DBContext.SaveChangesAsync();
+                return RedirectToAction("Index");
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "catch the Add page error");
+                return RedirectToAction("Add");
+            }
+
         }
         [HttpGet]
         public async Task<IActionResult> View(Guid Id)
@@ -58,7 +72,7 @@ namespace CRUD_MVC.Controllers
                     Department = employee.Department,
                     DateOfBirth = employee.DateOfBirth
                 };
-                return await Task.Run(() => View(("View"),viewModel));
+                return await Task.Run(() => View(("View"), viewModel));
             }
 
             return RedirectToAction("Index");
